@@ -26,6 +26,7 @@ class PlaylistModel;
 #include <QAbstractItemDelegate>
 #include <QListView>
 #include <QPointer>
+#include <QSet>
 class QWidget;
 class QModelIndex;
 
@@ -69,9 +70,11 @@ class PlaylistView : public QListView {
 		void settingsChanged (void);
 		void setPixmaps (Skin *skin);
 		void currentPosChanged (QModelIndex);
+		void entryMoved(QModelIndex, QModelIndex);
 
 	protected:
 		void mouseDoubleClickEvent (QMouseEvent *event);
+		void mouseMoveEvent (QMouseEvent *event);
 
 	protected slots:
 		void selectionChanged (const QItemSelection &, const QItemSelection &);
@@ -85,6 +88,9 @@ class PlaylistView : public QListView {
 		QColor m_color_normal;
 		QColor m_color_normal_bg;
 		QPointer<EntryInfo> m_entry_info;
+
+		QSet<int> m_old_selection;
+		int m_old_current_index;
 };
 
 

@@ -214,8 +214,8 @@ PlaylistModel::handle_change (const Xmms::Dict &chg)
 			m_plist.insert (npos, id);
 			endInsertRows ();
 
-			if (pos < npos && pos)
-				pos --;
+			//if (pos < npos && pos)
+			//	pos --;
 
 			emit entryMoved (index (pos, 0), index (npos, 0));
 

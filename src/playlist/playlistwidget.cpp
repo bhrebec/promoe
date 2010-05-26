@@ -196,6 +196,11 @@ PlaylistWidget::PlaylistWidget (PlaylistWindow *parent) : QWidget (parent)
 	// TODO: creation of Playlistmodel should be done elsewhere
 	m_view->setModel (App->client ()->active_playlist ());
 
+	connect (App->client ()->active_playlist (), 
+			SIGNAL(entryMoved (QModelIndex, QModelIndex)),
+			m_view, 
+			SLOT (entryMoved (QModelIndex, QModelIndex)));
+
 	/*
 	 * This is a hack to make PlaylistScrollBar work with PlaylistView.
 	 * It is necessery because of limitations and at least one Bug in the

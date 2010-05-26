@@ -123,7 +123,7 @@ PlaylistView::PlaylistView (QWidget *parent) : QListView (parent)
 
 	setSelectionMode (QAbstractItemView::ExtendedSelection);
 	setUniformItemSizes(true);
-	setDragEnabled(true);
+	//setDragEnabled(true);
 	setAcceptDrops(true);
 
 	// TODO make sure delegate gets deleted
@@ -142,6 +142,7 @@ PlaylistView::PlaylistView (QWidget *parent) : QListView (parent)
 
 	connect (client->xplayback (), SIGNAL(playbackStatusChanged(Xmms::Playback::Status)),
 	         this, SLOT(handleStatus(Xmms::Playback::Status)));
+
 }
 
 void
@@ -309,6 +310,104 @@ PlaylistView::mouseDoubleClickEvent (QMouseEvent *event)
 	if (m_status == XMMS_PLAYBACK_STATUS_STOP ||
 	    m_status == XMMS_PLAYBACK_STATUS_PAUSE) {
 			client->xplayback ()->play ();
+	}
+}
+
+void
+PlaylistView::mouseMoveEvent (QMouseEvent *event)
+{
+	if (event->buttons () != Qt::LeftButton)
+		return;
+
+
+	QModelIndex mouseIndex = indexAt (event->pos ());
+	QModelIndexList sel = selectedIndexes ();
+
+	if (mouseIndex.row () < 0 || sel.empty())
+		return;
+	
+	if (mouseIndex != currentIndex () && m_old_selection.empty()) {
+		m_old_current_index = currentIndex ().row();
+
+		qSort(sel);
+
+		int diff = mouseIndex.row () - currentIndex ().row ();
+		if (!(sel.first().row () + diff >= 0) || 
+			!(sel.last ().row () + diff < model ()->rowCount ()))
+			return;
+
+		if (diff < 0 ) {
+			// move selection up
+			for (int i = 0; i < sel.size (); i++) {
+				int row = sel[i].row();
+				int nrow = row + diff;
+
+				App->client ()->playlist ()->moveEntry (row, nrow);
+				m_old_selection.insert(row);
+			}
+		} else {
+			// move selection down
+			for (int i = sel.size () - 1; i >= 0; i--) {
+				int row = sel[i].row();
+				int nrow = row + diff;
+
+				App->client ()->playlist ()->moveEntry (row, nrow);
+				m_old_selection.insert(row);
+			}
+		}
+		setSelectionMode (QAbstractItemView::NoSelection);
+		setCurrentIndex(mouseIndex);
+		setSelectionMode (QAbstractItemView::ExtendedSelection);
+	}
+
+
+	/*
+
+	QRect r = visualRect(currentIndex ());
+	int y = event->pos ().y();
+	if (!(y >= r.y () && 
+		  y <= r.y () + r.height ())) {
+
+		m_old_selection.clear();
+		m_old_current_index = currentIndex ().row();
+
+		QModelIndexList sel = selectedIndexes ();
+		qSort(sel);
+
+		if (y < r.y ()) {
+			// move selection up
+			for (int i = 0; i < sel.size (); i++) {
+				int row = sel[i].row();
+				//qDebug() << "moving " << row << "to" << row - 1;
+				App->client ()->playlist ()->moveEntry (row, row - 1);
+
+				m_old_selection.insert(row);
+			}
+		} else {
+			// move selection down
+			for (int i = sel.size () - 1; i >= 0; i--) {
+				int row = sel[i].row();
+				//qDebug() << "moving " << row << "to" << row + 1;
+				App->client ()->playlist ()->moveEntry (row, row + 1);
+
+				m_old_selection.insert(row);
+			}
+		}
+	}
+	*/
+}
+
+void 
+PlaylistView::entryMoved(QModelIndex a, QModelIndex b)
+{
+	if (m_old_selection.contains (a.row())) {
+		selectionModel ()->select (b, QItemSelectionModel::Select);
+		m_old_selection.remove (a.row());
+	    if (m_old_current_index == a.row ()) {
+			setSelectionMode (QAbstractItemView::NoSelection);
+			setCurrentIndex (b);
+			setSelectionMode (QAbstractItemView::ExtendedSelection);
+		}
 	}
 }
 

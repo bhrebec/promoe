@@ -91,6 +91,7 @@ class PlaylistView : public QListView {
 
 		QSet<int> m_old_selection;
 		int m_old_current_index;
+		int m_prev_scroll_pos;
 };
 
 

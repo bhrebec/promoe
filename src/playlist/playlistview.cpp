@@ -299,6 +299,7 @@ PlaylistView::setPixmaps (Skin *skin)
 	update ();
 }
 
+
 void
 PlaylistView::mouseDoubleClickEvent (QMouseEvent *event)
 {
@@ -325,7 +326,10 @@ PlaylistView::mouseMoveEvent (QMouseEvent *event)
 	QModelIndex mouseIndex = indexAt (event->pos ());
 	QModelIndexList sel = selectedIndexes ();
 
-	if (mouseIndex.row () < 0 || sel.empty())
+	if (mouseIndex.row () < 0)
+        startDrag(Qt::CopyAction);
+
+	if (sel.isEmpty())
 		return;
 
 	if (mouseIndex != currentIndex () && m_old_selection.isEmpty()) {

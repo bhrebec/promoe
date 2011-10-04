@@ -60,8 +60,8 @@ def files_subdirs(subdirs, filters = ['.cpp', '.ui'], basedir='.'):
     for dir in subdirs:
         d = os.path.join(basedir, dir)
         for file in os.listdir(d):
-            for filter in filters:
-                if file.endswith(filter):
+            for filt in filters:
+                if file.endswith(filt):
                     ret.append(os.path.join(dir, file))
 
     return ret
@@ -92,6 +92,10 @@ def build(bld):
 
     incdirs = bld_subdirs
     incdirs.append('.')
+    incdirs.append('/usr/include/QtCore')
+    incdirs.append('/usr/include/QtGui')
+    incdirs.append('/usr/include/QtNetwork')
+    incdirs.append('/usr/include/xmms2')
 
     obj              = bld.new_task_gen(features='qt4 cprogram cxx')
     obj.target       = 'promoe'
@@ -99,6 +103,6 @@ def build(bld):
     obj.source       = sources
     obj.uselib_local = 'backend_lib dir_iterator'
     obj.add_objects  = 'promoe_data'
-    obj.uselib       = 'QTCORE QTGUI AVAHI-CLIENT AVAHI-QT4'
+    obj.uselib       = 'QtCore QtGui AVAHI-CLIENT AVAHI-QT4'
     pass
 

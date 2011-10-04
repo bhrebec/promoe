@@ -70,7 +70,7 @@ PlaylistDelegate::paint( QPainter *painter, const QStyleOptionViewItem& option,
 	QRect r = option.rect;
 	QString s;
 	// Get playtime and if it exists, draw it
-	m = index.sibling (index.row (), 2);
+	m = index.sibling (index.row (), 3);
 	tmp = m.data ();
 	if (tmp.isValid ()) {
 		int seconds = tmp.toInt () / 1000;
@@ -87,6 +87,11 @@ PlaylistDelegate::paint( QPainter *painter, const QStyleOptionViewItem& option,
 	if (tmp.isValid ())
 		s.append (tmp.toString ()).append (" - ");
 	m = index.sibling (index.row (), 1);
+	tmp = m.data ();
+	if (tmp.isValid ())
+		s.append (tmp.toString ().append (" - "));
+
+	m = index.sibling (index.row (), 2);
 	tmp = m.data ();
 	if (tmp.isValid ())
 		s.append (tmp.toString ());

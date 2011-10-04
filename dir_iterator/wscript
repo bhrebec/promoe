@@ -57,7 +57,7 @@ def build(bld):
     obj                 = bld.new_task_gen(features='qt4 cstaticlib cxx')
     obj.target          = 'dir_iterator'
     obj.install_path    = 0 # Don't install
-    obj.includes        = '.'
+    obj.includes        = ['.', '/usr/include/QtCore', '/usr/include/QtGui']
     obj.source          = sources
     obj.uselib          = 'QTCORE QTGUI LIBARCHIVE'
     obj.export_incdirs  = '.'

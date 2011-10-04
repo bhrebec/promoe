@@ -53,9 +53,10 @@ def build(bld):
     obj                 = bld.new_task_gen(features='qt4 cstaticlib cxx')
     obj.target          = 'backend_lib'
     obj.install_path    = 0 # Don't install
-    obj.includes        = '.'
+    obj.includes        = ['.', '/usr/include/QtGui', '/usr/include/QtCore', '/usr/include/xmms2']
     obj.source          = lib_source
-    obj.uselib          = 'QTCORE QTGUI XMMS2-CLIENT-CPP'
+    obj.uselib          = 'libQtCore libQtGui XMMS2-CLIENT-CPP'
     obj.export_incdirs  = '.'
+    print dir(obj)
     pass
 

@@ -26,6 +26,7 @@ class XClient;
 #include <QAbstractTableModel>
 #include <QVariant>
 #include <QHash>
+#include <QList>
 #include <QIcon>
 
 /**
@@ -118,6 +119,17 @@ class PlaylistModel : public QAbstractItemModel
 
 		uint32_t getPlaytimeForSelection(const QModelIndexList &index_list);
 
+        /**
+         * Add a playlist item to the queue
+         * @param pos Position of the item to be added
+         */
+		void queueToggle(uint32_t pos);
+
+        /**
+         * Clears the playlist queue
+         */
+		void queueClear();
+
 	protected:
 		XClient *m_client;
 		QList < unsigned int > m_plist;
@@ -153,12 +165,19 @@ class PlaylistModel : public QAbstractItemModel
 
 		void emitTotalPlaytime ();
 
+		bool queue_next(int pos);
+		void queue_pop();
+		int queue_peek();
+
 		uint32_t m_current_pos;
         bool m_isactive;
 
 		QList<QSize> m_cached_size;
 
 		QString m_name;
+
+        QList<uint32_t> m_queue; // list of ids, in queue order
+        QHash<uint32_t, int> m_queue_index; // map of ids to queue position
 
 };
 

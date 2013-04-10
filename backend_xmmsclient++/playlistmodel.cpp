@@ -29,22 +29,23 @@
 #include "playlistmodel.h"
 #include "xclient.h"
 #include "xclientcache.h"
+#include "xplayback.h"
 
 // Used to check for Protocolversion at compiletime
 #include <xmmsc/xmmsc_idnumbers.h>
 
 PlaylistModel::PlaylistModel (QObject *parent, XClient *client, const QString &name) : QAbstractItemModel (parent), m_current_pos (0)
 {
-//	m_columns.append ("#");
 	m_columns.append ("Artist");
 	m_columns.append ("Album");
 	m_columns.append ("Title");
+	m_columns.append ("#queue");
 	m_columns.append ("Duration");
 
-//	m_colfallback.append ("");
 	m_colfallback.append ("");
 	m_colfallback.append ("");
 	m_colfallback.append ("url");
+	m_colfallback.append ("");
 	m_colfallback.append ("");
 
 	m_cached_size.append (QSize ());
@@ -127,9 +128,11 @@ PlaylistModel::handle_update_pos (const Xmms::Dict &posdict)
 #else
 		uint32_t pos = posdict.get<uint32_t> ("position");
 #endif
-		m_current_pos = pos;
-		emit currentPosChanged (index (pos, 0));
-		emit dataChanged(index (pos, 0), index (pos, m_columns.size ()));
+        if (queue_next(pos)) {
+            m_current_pos = pos;
+            emit currentPosChanged (index (pos, 0));
+            emit dataChanged(index (pos, 0), index (pos, m_columns.size ()));
+        }
 	}
 	return true;
 }
@@ -137,9 +140,11 @@ PlaylistModel::handle_update_pos (const Xmms::Dict &posdict)
 bool
 PlaylistModel::handle_update_pos (const uint32_t &pos)
 {
-	m_current_pos = pos;
-	emit currentPosChanged (index (pos, 0));
-	emit dataChanged(index (pos, 0), index (pos, m_columns.size ()));
+    if (queue_next()) {
+        m_current_pos = pos;
+        emit currentPosChanged (index (pos, 0));
+        emit dataChanged(index (pos, 0), index (pos, m_columns.size ()));
+    }
 	return true;
 }
 #endif
@@ -223,14 +228,16 @@ PlaylistModel::handle_change (const Xmms::Dict &chg)
 
 			break;
 		case XMMS_PLAYLIST_CHANGED_REMOVE:
+            m_queue.removeAt(m_queue_index.take(m_plist[pos]));
             m_client->cache ()->invalidate (m_plist[pos]);
 			beginRemoveRows (idx, pos, pos);
 			m_plist.removeAt (pos);
 			endRemoveRows ();
 			break;
+		case XMMS_PLAYLIST_CHANGED_CLEAR:
+            queueClear();
 		case XMMS_PLAYLIST_CHANGED_SHUFFLE:
 		case XMMS_PLAYLIST_CHANGED_SORT:
-		case XMMS_PLAYLIST_CHANGED_CLEAR:
             m_client->cache ()->invalidate_all ();
 			m_client->playlist ()->listEntries () (Xmms::bind (&PlaylistModel::handle_list, this));
 			break;
@@ -387,6 +394,12 @@ PlaylistModel::data (const QModelIndex &index, int role) const
 
 		if (key == "#") {
 			return QVariant (index.row ());
+        } else if (key == "#queue") {
+			unsigned int id = m_plist[index.row ()];
+            if (m_queue_index.contains (id)) {
+                return QVariant (QString ("(%1)").arg (m_queue_index.value(id) + 1));
+            }
+            return QVariant ();
 		} else {
 			unsigned int id = m_plist[index.row ()];
 			PlaylistModel *fake = const_cast<PlaylistModel*> (this);
@@ -629,6 +642,76 @@ PlaylistModel::removeRows (QModelIndexList index_list)
 	for (int i = idlist.size () - 1; i >= 0; --i){
 		m_client->playlist ()->removeEntry (idlist.at(i));
 	}
+}
+
+void 
+PlaylistModel::queueToggle(unsigned int pos)
+{
+    uint32_t id = m_plist.at(pos);
+    if (m_queue_index.contains(id)) {
+        unsigned int queue_idx = m_queue_index.take(id);
+        m_queue.removeAt(queue_idx);
+    } else {
+        m_queue.append(id);
+        m_queue_index[id] = m_queue.length() - 1;
+    }
+    emit dataChanged(index(pos, 3), index(pos, 3));
+}
+
+void 
+PlaylistModel::queueClear() 
+{
+    m_queue.clear();
+    m_queue_index.clear();
+}
+
+int
+PlaylistModel::queue_peek ()
+{
+    if (m_queue.isEmpty())
+        return -1;
+
+    uint32_t next_id = m_queue.first();
+    QList<uint32_t> next_pos_list = getPosById(next_id);
+    if (next_pos_list.isEmpty())
+        return -1;
+    else
+        return next_pos_list.first();
+}
+
+void
+PlaylistModel::queue_pop ()
+{
+    uint32_t next_id = m_queue.takeFirst();
+    m_queue_index.remove(next_id);
+    QHash<uint32_t, int>::iterator it;
+    for (it = m_queue_index.begin(); it != m_queue_index.end(); ++it) {
+        it.value()--;
+    }
+}
+
+bool 
+PlaylistModel::queue_next (int pos)
+{
+    while (!m_queue.isEmpty()) {
+        int next_pos = queue_peek();
+        if (next_pos == -1) {
+            // Queue item no longer exists in playlist
+            queue_pop();
+        } else if (next_pos == pos) {
+            // Now on the next queue item; we're done
+            queue_pop();
+            return true;
+        } else if (pos - m_current_pos != 1) {
+            // User manually jumped in playlist, bail out
+            return true;
+        } else {
+            // Jump to queue position
+            m_client->xplayback ()->setPos(next_pos);
+            return false;
+        }
+    }
+    return true;
 }
 
 #include "playlistmodel.moc"

@@ -75,6 +75,7 @@ class PlaylistView : public QListView {
 	protected:
 		void mouseDoubleClickEvent (QMouseEvent *event);
 		void mouseMoveEvent (QMouseEvent *event);
+		void keyPressEvent (QKeyEvent *event);
 
 	protected slots:
 		void selectionChanged (const QItemSelection &, const QItemSelection &);

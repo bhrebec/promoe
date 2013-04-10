@@ -70,7 +70,7 @@ PlaylistDelegate::paint( QPainter *painter, const QStyleOptionViewItem& option,
 	QRect r = option.rect;
 	QString s;
 	// Get playtime and if it exists, draw it
-	m = index.sibling (index.row (), 3);
+	m = index.sibling (index.row (), 4);
 	tmp = m.data ();
 	if (tmp.isValid ()) {
 		int seconds = tmp.toInt () / 1000;
@@ -81,11 +81,12 @@ PlaylistDelegate::paint( QPainter *painter, const QStyleOptionViewItem& option,
 		r.setWidth (r.width () - option.fontMetrics.width (s));
 	}
 
-	// now build String for Artis Title and Position
+	// now build String for Artist, Title and Position
 	s = QString ("%1. ").arg (index.row () + 1);
 	tmp = index.data ();
 	if (tmp.isValid ())
 		s.append (tmp.toString ()).append (" - ");
+
 	m = index.sibling (index.row (), 1);
 	tmp = m.data ();
 	if (tmp.isValid ())
@@ -94,7 +95,13 @@ PlaylistDelegate::paint( QPainter *painter, const QStyleOptionViewItem& option,
 	m = index.sibling (index.row (), 2);
 	tmp = m.data ();
 	if (tmp.isValid ())
+		s.append (tmp.toString ().append (" "));
+
+	m = index.sibling (index.row (), 3);
+	tmp = m.data ();
+	if (tmp.isValid ())
 		s.append (tmp.toString ());
+
 	s = option.fontMetrics.elidedText(s, Qt::ElideRight, r.width());
 
 	painter->drawText (r, Qt::AlignVCenter, s);
@@ -369,6 +376,26 @@ PlaylistView::mouseMoveEvent (QMouseEvent *event)
 			}
 		}
 	}
+}
+
+void
+PlaylistView::keyPressEvent (QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Q) {
+        PlaylistModel *plmodel = qobject_cast<PlaylistModel *> (model ());
+
+        if (event->modifiers () && Qt::ShiftModifier) {
+            plmodel->queueClear ();
+        } else {
+            QModelIndexList sel = selectedIndexes ();
+			for (int i = 0; i < sel.size (); i++) {
+                plmodel->queueToggle (sel[i].row());
+            }
+        }
+
+    } else {
+        QListView::keyPressEvent(event);
+    }
 }
 
 void 

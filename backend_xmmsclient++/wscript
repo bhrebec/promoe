@@ -57,5 +57,6 @@ def build(bld):
     obj.source          = lib_source
     obj.uselib          = 'QTCORE QTGUI XMMS2-CLIENT-CPP'
     obj.export_incdirs  = '.'
+    obj.cxxflags = ['-DBOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT']
     pass
 
